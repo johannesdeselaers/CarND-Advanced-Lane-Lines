@@ -24,11 +24,7 @@ The goals / steps of this project are the following:
 ###Here I will consider the rubric points individually and describe how I addressed each point in my implementation.  
 
 ---
-###Writeup / README
 
-####1. Provide a Writeup / README that includes all the rubric points and how you addressed each one.  You can submit your writeup as markdown or pdf.  [Here](https://github.com/udacity/CarND-Advanced-Lane-Lines/blob/master/writeup_template.md) is a template writeup for this project you can use as a guide and a starting point.  
-
-You're reading it!
 ###Camera Calibration
 
 ####1. Briefly state how you computed the camera matrix and distortion coefficients. Provide an example of a distortion corrected calibration image.
@@ -54,39 +50,39 @@ Original Image                 |  Undistorted Image
 ![Original](test_images/test1.jpg)| ![Undistorted](output_images/test1_undistorted.jpg)
 
 ####2. Describe how (and identify where in your code) you used color transforms, gradients or other methods to create a thresholded binary image.  Provide an example of a binary image result.
-I used a combination of color and gradient thresholds to generate a binary image (thresholding steps at lines # through # in `another_file.py`).  Here's an example of my output for this step.  (note: this is not actually from one of the test images)
+I used a combination of color and gradient thresholds to generate a binary image. I tried quite a few different versions of applying gradients and/or thresholding on different color channels from different color spaces. Some examples of my experiments can be found in the `Gradient Thresholding` and `Color Channel Thresholding` sections in the [LaneDetectionPipeline](LaneDetectionPipeline.ipynb) notebook. 
 
-![alt text][image3]
+My final version (see section `My Final Pipeline` in the notebook) combines several approches
+- The top part of the image lower than some `vertical_limit` (containing mostly sky and horizon) is ignored.
+- Sobel x/y gradients are thresholded (on the u- and v- channels from the yuv color space and the s channel from the hls color space)
+- Yellow markings are extracted from the hsv colorspace
+- A percentile of the pixels in the image (those with the highest intensity) are extracted (to obtain white markings)
+Here's an example of my output for this step. 
+
+Original Image                 |  Binary Image
+:----------------------------:|:------------------------------:
+![Original](test_images/test5.jpg)| ![Binary](output_images/test5_thresholded.jpg)
+
+Birdseye View                 |  Binary Birdseye View
+:----------------------------:|:------------------------------:
+![BirdseyeOriginal](output_images/test5_birdseye.jpg)| ![BirdseyeBinary](output_images/test5_thresholded_bridseye.jpg)
 
 ####3. Describe how (and identify where in your code) you performed a perspective transform and provide an example of a transformed image.
 
-The code for my perspective transform includes a function called `warper()`, which appears in lines 1 through 8 in the file `example.py` (output_images/examples/example.py) (or, for example, in the 3rd code cell of the IPython notebook).  The `warper()` function takes as inputs an image (`img`), as well as source (`src`) and destination (`dst`) points.  I chose the hardcode the source and destination points in the following manner:
-
-```
-src = np.float32(
-    [[(img_size[0] / 2) - 55, img_size[1] / 2 + 100],
-    [((img_size[0] / 6) - 10), img_size[1]],
-    [(img_size[0] * 5 / 6) + 60, img_size[1]],
-    [(img_size[0] / 2 + 55), img_size[1] / 2 + 100]])
-dst = np.float32(
-    [[(img_size[0] / 4), 0],
-    [(img_size[0] / 4), img_size[1]],
-    [(img_size[0] * 3 / 4), img_size[1]],
-    [(img_size[0] * 3 / 4), 0]])
-
-```
-This resulted in the following source and destination points:
+The code for my perspective transform can be found in the Perspective Transform Section of my [LaneDetectionPipeline](LaneDetectionPipeline.ipynb) notebook.  I chose the hardcode the source and destination points to the following coordinates and used the openCV functionality to generate a transformation matrix and perform the warping.
 
 | Source        | Destination   | 
 |:-------------:|:-------------:| 
-| 585, 460      | 320, 0        | 
-| 203, 720      | 320, 720      |
-| 1127, 720     | 960, 720      |
-| 695, 460      | 960, 0        |
+| 280, 667      | 300, 710        | 
+| 580, 460      | 300, 200      |
+| 700, 460     | 980, 200      |
+| 1000, 667      | 980, 710      |
 
-I verified that my perspective transform was working as expected by drawing the `src` and `dst` points onto a test image and its warped counterpart to verify that the lines appear parallel in the warped image.
+I verified that my perspective transform was working as expected by drawing the Source and Destination points onto a test image (containing straight lines) and the birdseye view counterpart to verify that the lines appear parallel in the warped image. Here's an example of a straight line test image and the transformed version of it:
 
-![alt text][image4]
+Original Image                 |  Birdseye View
+:----------------------------:|:------------------------------:
+![Original](test_images/straight_lines1.jpg)| ![BirdseyeView](output_images/straight_lines1_bridseye.jpg)
 
 ####4. Describe how (and identify where in your code) you identified lane-line pixels and fit their positions with a polynomial?
 
