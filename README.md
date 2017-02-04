@@ -11,16 +11,6 @@ The goals / steps of this project are the following:
 * Warp the detected lane boundaries back onto the original image.
 * Output visual display of the lane boundaries and numerical estimation of lane curvature and vehicle position.
 
-[//]: # (Image References)
-
-[image1]: ./examples/undistort_output.png "Undistorted"
-[image2]: ./test_images/test1.jpg "Road Transformed"
-[image3]: ./examples/binary_combo_example.jpg "Binary Example"
-[image4]: ./examples/warped_straight_lines.jpg "Warp Example"
-[image5]: ./examples/color_fit_lines.jpg "Fit Visual"
-[image6]: ./examples/example_output.jpg "Output"
-[video1]: ./project_video.mp4 "Video"
-
 ###Here I will consider the rubric points individually and describe how I addressed each point in my implementation.  
 
 ---
@@ -42,7 +32,6 @@ Original Image                 |  Undistorted Image
 ###Pipeline (single images)
 
 ####1. Provide an example of a distortion-corrected image.
-To demonstrate this step, I will describe how I apply the distortion correction to one of the test images like this one:
 To correct a test image for distortion, I use the`cv2.undistort()` function along with the camera calibration obtained in the previous step and obtained this result:
 
 Original Image                 |  Undistorted Image
@@ -54,9 +43,9 @@ I used a combination of color and gradient thresholds to generate a binary image
 
 My final version (see section `3.3. Final Thresholding Pipeline` in the notebook) combines several approches
 - The top part of the image lower than some `vertical_limit` (containing mostly sky and horizon) is ignored.
-- Sobel x/y gradients are thresholded (on the u- and v- channels from the yuv color space and the s channel from the hls color space)
-- Yellow markings are extracted from the hsv colorspace
-- A percentile of the pixels in the image (those with the highest intensity) are extracted (to obtain white markings)
+- Sobel x/y gradients are thresholded (on the u- and v- channels from the yuv color space and the s channel from the hls color space).
+- Yellow pixels are extracted from the hsv colorspace.
+- A percentile of the pixels in the image (those with the highest intensity) are extracted (to obtain white markings).
 
 Here's an example of my output for this step. 
 
@@ -87,25 +76,25 @@ Original Image                 |  Birdseye View
 
 ####4. Describe how (and identify where in your code) you identified lane-line pixels and fit their positions with a polynomial?
 
-The code for this task is found in the section`4.1 Identify Lane-Line Pixels and Fit Polynomial`. *(Note: most of the code for  is taken from the classroom examples and only slightly modified)*.
+The code for this task is found in the section`4.1 Identify Lane-Line Pixels and Fit Polynomial`. *(Note: some of the code for is taken from the classroom examples)*.
 The approach is twofold:
 - If there is no prior fit of a lane line, I use the sliding windows approach to find lane-line pixels and fit a 2nd order polynomial.
-- If there is a prior fit of lane lines, I replace the sliding windos approach with a margin around the prior fit and fit the polynomial to the pixels found in this way.
+- If there is a prior fit of lane lines, I replace the sliding windows approach with a margin around the prior fit and fit the polynomial to the pixels found in this way.
 Here's an exampe of a binarized warped image with identified lane-line pixels and fitted polynomials:
 
-SlidingWindow                 |  using previous fit
+sliding window                 |  using previous fit
 :----------------------------:|:------------------------------:
 ![SlidingWindow](output_images/withSlidingWindow.png)| ![using previous fit](output_images/withPreviousFit.png)
 
 ####5. Describe how (and identify where in your code) you calculated the radius of curvature of the lane and the position of the vehicle with respect to center.
 
 Section`4.2 Measuring Curvature and Vehicle Offset` contains the computation of curvature and the vehicle offset from the lane center.
-- The computation of the curvature assumes a circular curve in the road and returns a radius of this imaginary circle in meters. 
-- The computation of the offset from the lane center assumes that the camera is mounted centrally on the car. The lane center is computed as the average of the two polynomials for the left and right lane markings. The offset is then computed as the difference between the image center coordinate (in x dimension) and the lane center (in image coordinates at the bottom of the image, y=719) and then scaled into world coordinates (unit is meters).
+- The computation of the curvature assumes a circular curve in the road and returns a radius of this circle in meters. 
+- The computation of the offset from the lane center assumes that the camera is mounted centered on the car. The lane center is computed as the average of the two polynomials for the left and right lane markings. The offset is then computed as the difference between the image center coordinate (in x dimension) and the lane center (in image coordinates at the bottom of the image, y=719) and then scaled into world coordinates (unit is meters).
 
 ####6. Provide an example image of your result plotted back down onto the road such that the lane area is identified clearly.
 
-I implemented this step in section 4.3  Here is an example of my result on a test image:
+I implemented this step in section 4.3. Here is an example of my result on a test image:
 
 ![backprojected](output_images/backprojected.jpg)
 
@@ -123,7 +112,9 @@ Here's a [link to my video result](https://youtu.be/CZWhJLUduZY)
 
 ####1. Briefly discuss any problems / issues you faced in your implementation of this project.  Where will your pipeline likely fail?  What could you do to make it more robust?
 
-Here I'll talk about the approach I took, what techniques I used, what worked and why, where the pipeline might fail and how I might improve it if I were going to pursue this project further. 
+While my current implementation can handle the project video very well, there are several failure conditions in its current state:
+- Since there is only one single parameter setting for the thresholding, even with using various color spaces the algorithm will still be suceptible to particularly strong illumination changes or reflections in the windshield (as in the hard challenge video). Even though I undertook a fair amount of experimentation, the final choice still seems somewhat arbitrary.
+- Another failure condition category is particularly strong or varying corners. In strong corners one of the lane line markers may simply lie outside of the field of view of the centered camera. This could be remedied by using additional side oriented camera images, whose images coudl be stiched together with the front-facing camera. Regarding varying corners, the 2nd degree polynomial currently used to fit to the lane markings can only fit curvatures in one direction, i.e. either to the left or the right. It will not be able to handle tight s-curves that change direction of the curvature within the examined region. To be able to compe with this scenario one could instead use higher order polynomials or cubic spline interpolation.
+- I have not yet added a moving average on the polynomial fit to the lane lines, but operate mostly on a per frame basis. Adding the averaging would help smoothen out slight failures and jitter.
 
-Only one parameter setting currently, even with other color spaces still suceptible to strong illumination changes.
-Use deep learning to segment the image into different things (lane markers among others)
+Generally speaking, I would also be very interested to try to solve the segmentation problem of finding the lane lines using the Deep Learning approach.
